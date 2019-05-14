@@ -1,6 +1,7 @@
 from django.db import models
-
+from django.core.exceptions import ValidationError
 from users.models import Shipper, Carrier
+from django.utils import timezone
 
 
 class LoadManager(models.Manager):
@@ -83,11 +84,18 @@ class Load(models.Model):
     destination_city, shipper_price, carrier_price, dropped_by.
     """
 
+    def __str__(self):
+        return self.ref
+
+    def validate_date(date):
+        if date < timezone.now().date():
+            raise ValidationError("Date cannot be in the past")
+
     shipper = models.ForeignKey(
         Shipper, related_name='shipper', on_delete=models.PROTECT)
     carrier = models.ForeignKey(
         Carrier, related_name='carrier', on_delete=models.PROTECT, null=True, blank=True)
-    pickup_date = models.DateField()
+    pickup_date = models.DateField(validators=[validate_date])
     ref = models.CharField(max_length=200)
     origin_city = models.CharField(max_length=200)
     destination_city = models.CharField(max_length=200)
@@ -96,6 +104,3 @@ class Load(models.Model):
     dropped_by = models.ManyToManyField(Carrier, related_name="dropped_by")
 
     objects = LoadManager()
-
-    def __str__(self):
-        return self.ref
