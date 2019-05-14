@@ -40,12 +40,19 @@ class LoadViewSet(ModelViewSet):
         serializer = CreateLoadSerializer(data=request.data)
         carrier_price = utils.calculate_carrier_price(request.data["shipper_price"])
         if serializer.is_valid():
-            serializer.save(shipper_id=request.user.pk,
+            serializer.save(shipper=Shipper.objects.get_shipper(request),
                             carrier_price=carrier_price)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(methods=['post'], detail=False)
+    def date(self, request):
+        date = request.data["pickup_date"]
+        loads = Load.objects.filter(pickup_date=date)
+        serializer = CarrierLoadSerializer(loads, many=True)
+        return Response(data=serializer.data)
 
     # Available loads list
     @action(methods=['get'], detail=False)
